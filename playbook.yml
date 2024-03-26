@@ -1,0 +1,79 @@
+---
+- name: Deploy Dockerized Web Application
+  hosts: lemp
+  become: no
+  tasks:
+     - name: Ansible create multiple directories with_items
+       file:
+         path: "{{ item }}"
+         state: directory
+       loop:
+         - '/root/testwork/ansible/version4/ComposeDockerNginxPHP/nginx/'
+         - '/root/testwork/ansible/version4/ComposeDockerNginxPHP/php/'
+         - '/root/testwork/ansible/version4/ComposeDockerNginxPHP/php/www/'
+         - '/root/testwork/ansible/version4/ComposeDockerNginxPHP/nginx/sites/'
+         - '/root/testwork/ansible/version4/ComposeDockerNginxPHP/maridb/'
+         - '/root/testwork/ansible/version4/ComposeDockerNginxPHP/phpmyadmin/'
+
+     - name: Copy docker-compose.yml
+       copy:
+         src: ./docker-compose.yml
+         dest: /root/testwork/ansible/version4/ComposeDockerNginxPHP/
+
+     - name: Copy NGINX configuration
+       copy:
+         src: ./nginx/nginx.conf
+         dest: /root/testwork/ansible/version4/ComposeDockerNginxPHP/nginx/
+
+     - name: Copy NGINX Default sites configuration
+       copy:
+         src: ./nginx/sites/default.conf
+         dest: /root/testwork/ansible/version4/ComposeDockerNginxPHP/nginx/sites/
+
+     - name: Copy PHP Configurations
+       copy:
+         src: ./php/php.ini
+         dest: /root/testwork/ansible/version4/ComposeDockerNginxPHP/php/
+
+     - name: Copy PHP Index
+       copy:
+         src: ./php/www/index.php
+         dest: /root/testwork/ansible/version4/ComposeDockerNginxPHP/php/www/
+
+     - name: Copy MariaDB CNF Configuration
+       copy:
+         src: ./mariadb/my.cnf
+         dest: /root/testwork/ansible/version4/ComposeDockerNginxPHP/mariadb/
+
+     - name: Copy PHPAdmin Configuration
+       copy:
+         src: ./phpmyadmin/config.inc.php
+         dest: /root/testwork/ansible/version4/ComposeDockerNginxPHP/phpmyadmin/
+
+     - name: Copy Env Configuration
+       copy:
+         src: ./.env
+         dest: /root/testwork/ansible/version4/ComposeDockerNginxPHP/
+
+     - name: Install Docker and Docker Compose
+       dnf:
+         name:
+           - docker-ce-cli-1:26.0.0-1.fc39.x86_64
+           - docker-compose
+         state: present
+
+     - name: Ensure Docker service is running
+       service:
+         name: docker.service
+         state: started
+
+     - name: Docker-Compose start containers
+       command: 'docker-compose up -d'
+       args:
+         chdir: /root/testwork/ansible/version4/ComposeDockerNginxPHP/
+
+  handlers:
+    - name: Restart Nginx
+      service:
+        name: nginx.service
+        state: restarted
